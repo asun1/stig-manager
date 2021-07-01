@@ -51,6 +51,7 @@ const verifyRequest = async function (req, securityDefinition, requiredScopes, c
             privileges.globalAccess = roleGetter(decoded).includes('global_access')
             privileges.canCreateCollection = roleGetter(decoded).includes('create_collection')
             privileges.canAdmin = roleGetter(decoded).includes('admin')
+            privileges.hasUser = roleGetter(decoded).includes('user')
 
             req.userObject.privileges = privileges
             const response = await User.getUserByUsername(req.userObject.username, ['collectionGrants', 'statistics'], false, null)   
@@ -74,6 +75,9 @@ const verifyRequest = async function (req, securityDefinition, requiredScopes, c
                 if (userId != req.userObject.userId) {
                     req.userObject.userId = userId.toString()
                 }
+            }
+            if(!req.userObject.privileges.hasUser) { 
+                throw new SmError(403, 'Role "user" required for access.')                
             }
             if ('elevate' in req.query && (req.query.elevate === 'true' && !req.userObject.privileges.canAdmin)) {
                 throw new SmError(403, 'User has insufficient privilege to complete this request.')
